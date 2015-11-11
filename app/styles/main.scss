@@ -10,10 +10,20 @@ body {
 .slider {
 
   &__navigation {
+    position: absolute;
+    right: 0;
     li {
       &.active {
         background: red;
       }
+    }
+  }
+
+  &__page {
+    min-height: 100%;
+    background: blue;
+    &.pinned {
+      position: absolute;
     }
   }
 }

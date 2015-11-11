@@ -23,6 +23,7 @@
             base.generateMenuFromSections();
             base.doSubnavigationPagination();
             base.setSectionHeightsAndPinCurtains();
+            base.markActiveSlideBasedOnWindowPosition();
         };
 
         base.generateMenuFromSections = function(){
@@ -65,12 +66,65 @@
           });
 
           /*
-            On non-touch devices, add class curtain-pinned (position: absolute)
+            Add class pinned (position: absolute)
           */
-          // if (!Modernizr.touch && !window.isMobileSize) {
-          //   $panes.addClass('curtain-pinned');
-          // }
+          base.$sections.addClass('pinned');
         };
+
+        /*
+          On page load, figure out which slide is presented based on load position.
+        */
+        base.markActiveSlideBasedOnWindowPosition = function() {
+          var windowPosition = $(window).scrollTop();
+          for(var x = 0; x < base.cacheSectionPixelValues.length -1; x++) {
+            /*
+              Find which panes we are in between and bring that pane to the front.
+            */
+            var activeSectionIndexFound = false;
+            if(windowPosition <= base.cacheSectionPixelValues[0].endPoint) {
+              base.currentActiveSectionIndex = 0;
+              activeSectionIndexFound = true;
+            }
+            else if(windowPosition >= base.cacheSectionPixelValues[x].endPoint && windowPosition <= base.cacheSectionPixelValues[x+1].endPoint) {
+              base.currentActiveSectionIndex = x+1;
+              activeSectionIndexFound = true;
+            } else if(windowPosition >= base.cacheSectionPixelValues[base.cacheSectionPixelValues.length - 1].endPoint){
+              base.currentActiveSectionIndex = base.cacheSectionPixelValues.length - 1;
+              activeSectionIndexFound = true;
+            }
+
+            if(activeSectionIndexFound) {
+              var $activePane = base.$sections.eq(base.currentActiveSectionIndex);
+              base.currentActiveSectionIndex = $activePane.parent().index()-1;
+              /*
+                On non-touch devices, add our curtain effect with .next (position:fixed) for the background element
+                (the one being scrolled into so it never moves)
+              */
+              if(base.currentActiveSectionIndex !== 0) {
+                var combinedHeights = base.getCombinedHeightsUpToPane(base.currentActiveSectionIndex);
+                $activePane.removeClass('next').addClass('transitioning');
+
+                $panes.eq(base.currentActiveSectionIndex+1).addClass('next').css({'top': 0});
+                $activePane.css({'top': combinedHeights});
+              }
+              x = base.cacheSectionPixelValues.length;
+              return;
+            }
+
+          }
+
+          _doSubnavigationPagination();
+          _toggleSubnavigationDisplayBasedOnPosition();
+        };
+
+        base.getCombinedHeightsUpToPane = function(index) {
+          if(index <= 0) {
+            return 0;
+          }
+          // console.log(cachePixelValues);
+          var combinedHeightsTmp = 0;
+          return cachePixelValues[index-1].endPoint - $curtainsWrapper.offset().top; //Works much better
+        }
 
         // Run initializer
         base.init();
